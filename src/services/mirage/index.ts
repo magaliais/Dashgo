@@ -1,4 +1,4 @@
-import { createServer, Factory, Model } from 'miragejs';
+import { createServer, Factory, Model, Response } from 'miragejs';
 import { faker } from '@faker-js/faker';
 
 type User = {
@@ -16,8 +16,9 @@ export function makeServer() {
     // ? Criação de dados em massa (factories)
     factories: {
       user: Factory.extend({
-        name() {
-          return faker.name.fullName();
+        name(i: number) {
+          return `User ${i + 1}`
+          // return faker.name.fullName();
         },
         email() {
           return faker.internet.email().toLowerCase();
@@ -45,9 +46,25 @@ export function makeServer() {
 
 
       // ? Shorthands do MirageJS para o CRUD de user
-      this.get('/users');
-      this.post('/users');
+      this.get('/users', function (schema, request) {
+        // Paginação
+        const { currentPage, per_page = 10 } = request.queryParams;
 
+        const total = schema.all('user').length;
+
+        const pageStart = (Number(currentPage) - 1) * Number(per_page);
+        const pageEnd = pageStart + Number(per_page);
+
+        const users = this.serialize(schema.all('user')).users.slice(pageStart, pageEnd);
+
+        return new Response(
+          200,
+          { 'x-total-count': String(total) },
+          { users }
+        );
+      });
+
+      this.post('/users');
 
       // ? Para evitar conflitos com as API routes do Next
       this.namespace = '';
