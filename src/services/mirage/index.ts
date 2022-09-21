@@ -64,6 +64,7 @@ export function makeServer() {
         );
       });
 
+      this.get('/users/:id');
       this.post('/users');
 
       // ? Para evitar conflitos com as API routes do Next
